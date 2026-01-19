@@ -4,6 +4,8 @@ use serde::{Serialize, Serializer};
 use serde_json::Value;
 use std::fs;
 
+pub const OUTDIR: &str = "./output/";
+
 pub fn fmt1<S>(v: &f64, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -60,13 +62,15 @@ pub struct EchoReport {
 
     pub age: i32,
 
-    pub height: u16,
-    pub weight: u16,
+    pub height: i32,
+    pub weight: i32,
+    pub pulse: i32,
+
+    #[serde(serialize_with = "fmt1")]
+    pub aortic_sinus_diameter: f64,
 
     #[serde(serialize_with = "fmt2")]
     pub body_surface_area: f64,
-
-    pub pulse: u16,
 
     #[serde(serialize_with = "fmt1")]
     pub left_ventricle_diastolic_size: f64,
@@ -80,13 +84,13 @@ pub struct EchoReport {
     #[serde(serialize_with = "fmt1")]
     pub posterior_wall_thickness: f64,
 
-    pub left_ventricle_mass: u16,
-    pub left_ventricle_mass_index: u16,
+    pub left_ventricle_mass: i32,
+    pub left_ventricle_mass_index: i32,
 
     #[serde(serialize_with = "fmt2")]
     pub relative_wall_thickness: f64,
 
-    pub stroke_volume: u16,
+    pub stroke_volume: i32,
 
     #[serde(serialize_with = "fmt1")]
     pub cardiac_index: f64,
@@ -94,15 +98,20 @@ pub struct EchoReport {
     #[serde(serialize_with = "fmt1")]
     pub cardiac_output: f64,
 
-    pub simpson_end_diastolic_volume: u16,
-    pub simpson_end_systolic_volume: u16,
-    pub ejection_fraction: u16,
-
-    #[serde(serialize_with = "fmt1")]
-    pub aortic_sinus_diameter: f64,
+    pub simpson_end_diastolic_volume: i32,
+    pub simpson_end_systolic_volume: i32,
+    pub ejection_fraction: i32,
 
     #[serde(serialize_with = "fmt1")]
     pub ascending_aorta_diameter: f64,
+
+    #[serde(serialize_with = "fmt1")]
+    pub left_atrium: f64,
+    pub left_atrium4: String,
+    pub left_atrium_volume: i32,
+
+    #[serde(serialize_with = "fmt1")]
+    pub left_atrium_index: f64,
 }
 
 fn calc_age(birthday: NaiveDate) -> i32 {
@@ -115,45 +124,82 @@ fn calc_age(birthday: NaiveDate) -> i32 {
 }
 
 fn main() {
-    let name = Text::new("ФИО пациента:").prompt().unwrap();
+    let name = Text::new("ФИО:").prompt().unwrap();
 
-    let birthday = Text::new("Дата рождения пациента:").prompt().unwrap();
-    let birthday = NaiveDate::parse_from_str(&birthday, "%d.%m.%Y").unwrap();
+    let birthday = Text::new("Дата рождения (ДДММГГГГ):").prompt().unwrap();
+    let birthday = NaiveDate::parse_from_str(&birthday, "%d%m%Y").unwrap();
 
     let departments = vec![Department::Kdo, Department::Caop, Department::Diot];
     let department: Department = Select::new("Отделение:", departments).prompt().unwrap();
 
     let cardnum: String = match department {
         Department::Diot => {
-            let aknum = Text::new("АК№:").prompt().unwrap();
-            format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
-        }
-        _ => {
             let ibnum = Text::new("ИБ№:").prompt().unwrap();
             format!("ИБ№: {}-{}-C", ibnum, Local::now().format("%y"))
         }
+        _ => {
+            let aknum = Text::new("АК№:").prompt().unwrap();
+            format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
+        }
     };
 
+    let height: i32 = Text::new("Рост:").prompt().unwrap().parse().unwrap();
+    let weight: i32 = Text::new("Вес:").prompt().unwrap().parse().unwrap();
+    let pulse: i32 = Text::new("ЧСС:").prompt().unwrap().parse().unwrap();
+
+    let aortic_sinus_diameter: f64 = Text::new("Ао:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+    let ascending_aorta_diameter: f64 = Text::new("ВА:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+    let left_atrium: f64 = Text::new("ЛП:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+
+    let left_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
+    let left_atrium4_prep: Vec<&str> = left_atrium4_ask.split_whitespace().collect();
+    let left_atrium4: String = format!("{}×{}", left_atrium4_prep[0], left_atrium4_prep[1]);
+
+    let left_atrium_volume: i32 = Text::new("ЛП V:").prompt().unwrap().parse().unwrap();
+
+    // пока не надо начало
     let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
         .prompt()
         .unwrap()
         .replace(',', ".")
         .parse()
         .unwrap();
-    let height = Text::new("Рост:").prompt().unwrap();
 
-    let simpson_end_diastolic_volume: u16 = Text::new("КДО (по Симпсону):")
+    let simpson_end_diastolic_volume: i32 = Text::new("КДО (по Симпсону):")
         .prompt()
         .unwrap()
         .parse()
         .unwrap();
-    let simpson_end_systolic_volume: u16 = Text::new("КСО (по Симпсону):")
+    let simpson_end_systolic_volume: i32 = Text::new("КСО (по Симпсону):")
         .prompt()
         .unwrap()
         .parse()
         .unwrap();
+    // пока не надо конец
 
-    let out_path = format!("./output/{} {}.docx", &name, Local::now().format("%y%m%d"));
+    //расчёты начало
+    let body_surface_area: f64 =
+        f64::powf(height as f64, 0.725) * f64::powf(weight as f64, 0.425) * 0.007;
+
+    let left_atrium_index: f64 = left_atrium_volume as f64 / body_surface_area;
+    //расчёты конец
+
+    let out_filename: String = format!("{} {}.docx", &name, Local::now().format("%y%m%d"));
 
     let ready_data = EchoReport {
         name,
@@ -165,12 +211,19 @@ fn main() {
 
         age: calc_age(birthday),
 
-        height: height.parse().unwrap(),
-        weight: 82,
+        height,
+        weight,
+        pulse,
 
-        body_surface_area: 2.01,
+        aortic_sinus_diameter,
+        ascending_aorta_diameter,
 
-        pulse: 72,
+        left_atrium,
+        left_atrium4,
+        left_atrium_volume,
+        left_atrium_index,
+
+        body_surface_area,
 
         left_ventricle_diastolic_size,
 
@@ -191,9 +244,6 @@ fn main() {
         simpson_end_diastolic_volume,
         simpson_end_systolic_volume,
         ejection_fraction: 62,
-
-        aortic_sinus_diameter: 3.4,
-        ascending_aorta_diameter: 3.1,
     };
     let template_bytes = fs::read("./assets/tplt.docx").unwrap();
 
@@ -202,5 +252,6 @@ fn main() {
     let rendered_bytes = docx_handlebars::render_template(template_bytes, &data).unwrap();
 
     fs::create_dir("./output").unwrap_or_else(|_| {});
+    let out_path = format!("{} {}", OUTDIR, out_filename);
     fs::write(out_path, rendered_bytes).unwrap();
 }
