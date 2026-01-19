@@ -49,12 +49,14 @@ impl std::fmt::Display for Department {
 
 #[derive(Debug, Serialize)]
 pub struct EchoReport {
-    pub department: Department,
-
     pub name: String,
 
     #[serde(serialize_with = "fmt_date")]
     pub birthday: NaiveDate,
+
+    pub department: Department,
+
+    pub cardnum: String,
 
     pub age: i32,
 
@@ -121,6 +123,17 @@ fn main() {
     let departments = vec![Department::Kdo, Department::Caop, Department::Diot];
     let department: Department = Select::new("Отделение:", departments).prompt().unwrap();
 
+    let cardnum: String = match department {
+        Department::Diot => {
+            let aknum = Text::new("АК№:").prompt().unwrap();
+            format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
+        }
+        _ => {
+            let ibnum = Text::new("ИБ№:").prompt().unwrap();
+            format!("ИБ№: {}-{}-C", ibnum, Local::now().format("%y"))
+        }
+    };
+
     let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
         .prompt()
         .unwrap()
@@ -142,25 +155,14 @@ fn main() {
 
     let out_path = format!("./output/{} {}.docx", &name, Local::now().format("%y%m%d"));
 
-    let aknum = 12;
-
-    let patient_card: String = match department {
-        Department::Diot => {
-            format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
-        }
-        _ => {
-            format!("ИБ№: {}", aknum, )
-        }
-
-    };
-    println!("{}", patient_card);
-
     let ready_data = EchoReport {
-        department,
-
         name,
 
         birthday,
+
+        department,
+        cardnum,
+
         age: calc_age(birthday),
 
         height: height.parse().unwrap(),
