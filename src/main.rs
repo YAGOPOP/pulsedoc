@@ -29,6 +29,17 @@ where
     s.serialize_str(&d.format("%d.%m.%Y").to_string())
 }
 
+pub fn fmt_option_rvm<S>(val: Option<String>, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let txt = match val {
+        Some(v) => format!("{}", v),
+        None => "".to_string(),
+    };
+    s.serialize_str(&txt)
+}
+
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum Department {
     #[serde(rename = "КДО")]
@@ -107,11 +118,24 @@ pub struct EchoReport {
 
     #[serde(serialize_with = "fmt1")]
     pub left_atrium: f64,
+
     pub left_atrium4: String,
     pub left_atrium_volume: i32,
 
     #[serde(serialize_with = "fmt1")]
     pub left_atrium_index: f64,
+
+    pub right_atrium_s: i32,
+    pub right_atrium4: String,
+    pub right_atrium_volume: i32,
+
+    #[serde(serialize_with = "fmt1")]
+    pub right_ventricle: f64,
+
+    #[serde(serialize_with = "fmt1")]
+    pub right_ventricle_baz: f64,
+
+    pub ight_ventricle_medium: Option<String>,
 }
 
 fn calc_age(birthday: NaiveDate) -> i32 {
@@ -172,6 +196,34 @@ fn main() {
 
     let left_atrium_volume: i32 = Text::new("ЛП V:").prompt().unwrap().parse().unwrap();
 
+    let right_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
+    let right_atrium4_prep: Vec<&str> = right_atrium4_ask.split_whitespace().collect();
+    let right_atrium4: String = format!("{}×{}", right_atrium4_prep[0], right_atrium4_prep[1]);
+
+    let right_atrium_s: i32 = Text::new("ПП S:").prompt().unwrap().parse().unwrap();
+    let right_atrium_volume: i32 = Text::new("ПП V:").prompt().unwrap().parse().unwrap();
+
+    let right_ventricle: f64 = Text::new("ПЗР ПЖ:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+
+    let right_ventricle_baz: f64 = Text::new("ПЖ баз:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+
+    let ight_ventricle_medium: f64 = Text::new("ПЖ ср:")
+        .prompt()
+        .unwrap()
+        .replace(",", ".")
+        .parse()
+        .unwrap();
+
     // пока не надо начало
     let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
         .prompt()
@@ -223,6 +275,12 @@ fn main() {
         left_atrium_volume,
         left_atrium_index,
 
+        right_atrium4,
+        right_atrium_s,
+        right_atrium_volume,
+
+        right_ventricle,
+        right_ventricle_baz,
         body_surface_area,
 
         left_ventricle_diastolic_size,
