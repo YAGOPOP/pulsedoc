@@ -34,7 +34,7 @@ where
     S: Serializer,
 {
     let txt = match val {
-        Some(v) => format!("{}", v),
+        Some(v) => format!(", средний  {} см (N< 3,5 см).", v),
         None => "".to_string(),
     };
     s.serialize_str(&txt)
@@ -135,7 +135,7 @@ pub struct EchoReport {
     #[serde(serialize_with = "fmt1")]
     pub right_ventricle_baz: f64,
 
-    pub ight_ventricle_medium: Option<String>,
+    pub ight_ventricle_medium_full: Option<String>,
 }
 
 fn calc_age(birthday: NaiveDate) -> i32 {
@@ -217,12 +217,11 @@ fn main() {
         .parse()
         .unwrap();
 
-    let ight_ventricle_medium: f64 = Text::new("ПЖ ср:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
+    // let ight_ventricle_medium = Text::new("ПЖ ср:")
+    //     .prompt()
+    //     .unwrap();
+
+        let ight_ventricle_medium_full = Some("zzzzz".to_string());
 
     // пока не надо начало
     let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
@@ -302,6 +301,8 @@ fn main() {
         simpson_end_diastolic_volume,
         simpson_end_systolic_volume,
         ejection_fraction: 62,
+
+        ight_ventricle_medium_full,
     };
     let template_bytes = fs::read("./assets/tplt.docx").unwrap();
 
