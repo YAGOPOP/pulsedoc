@@ -3,7 +3,7 @@ use inquire::{InquireError, Select, Text};
 use rfd::FileDialog;
 use serde::Serialize;
 use serde_json::Value;
-use std::{fs, path::PathBuf};
+use std::{arch::global_asm, fs, path::PathBuf};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum Department {
@@ -98,190 +98,191 @@ fn calc_age(birthday: NaiveDate) -> i32 {
 }
 
 fn main() {
-    let folder = FileDialog::new()
+    let mut path = match FileDialog::new()
         .set_title("Выберите каталог для сохранения")
-        .pick_folder();
-
-    let mut path = match folder {
+        .pick_folder()
+    {
         Some(p) => p,
         None => PathBuf::from("./output/"),
     };
 
-    let name = Text::new("ФИО:").prompt().unwrap();
+    println!("{}", safe_get_string("goyda:", true));
 
-    let birthday = Text::new("Дата рождения (ДДММГГГГ):").prompt().unwrap();
-    let birthday = NaiveDate::parse_from_str(&birthday, "%d%m%Y").unwrap();
+    // let name = Text::new("ФИО:").prompt().unwrap();
 
-    let departments = vec![Department::Kdo, Department::Caop, Department::Diot];
-    let department: Department = Select::new("Отделение:", departments).prompt().unwrap();
+    // let birthday = Text::new("Дата рождения (ДДММГГГГ):").prompt().unwrap();
+    // let birthday = NaiveDate::parse_from_str(&birthday, "%d%m%Y").unwrap();
 
-    let cardnum: String = match department {
-        Department::Diot => {
-            let ibnum = Text::new("ИБ№:").prompt().unwrap();
-            format!("ИБ№: {}-{}-C", ibnum, Local::now().format("%y"))
-        }
-        _ => {
-            let aknum = Text::new("АК№:").prompt().unwrap();
-            format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
-        }
-    };
+    // let departments = vec![Department::Kdo, Department::Caop, Department::Diot];
+    // let department: Department = Select::new("Отделение:", departments).prompt().unwrap();
 
-    let height: i32 = Text::new("Рост:").prompt().unwrap().parse().unwrap();
-    let weight: i32 = Text::new("Вес:").prompt().unwrap().parse().unwrap();
-    let pulse: i32 = Text::new("ЧСС:").prompt().unwrap().parse().unwrap();
+    // let cardnum: String = match department {
+    //     Department::Diot => {
+    //         let ibnum = Text::new("ИБ№:").prompt().unwrap();
+    //         format!("ИБ№: {}-{}-C", ibnum, Local::now().format("%y"))
+    //     }
+    //     _ => {
+    //         let aknum = Text::new("АК№:").prompt().unwrap();
+    //         format!("АК№: {}-{}-А", aknum, Local::now().format("%Y"))
+    //     }
+    // };
 
-    let aortic_sinus_diameter: f64 = Text::new("Ао:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
-    let ascending_aorta_diameter: f64 = Text::new("ВА:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
-    let left_atrium: f64 = Text::new("ЛП:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
+    // let height: i32 = Text::new("Рост:").prompt().unwrap().parse().unwrap();
+    // let weight: i32 = Text::new("Вес:").prompt().unwrap().parse().unwrap();
+    // let pulse: i32 = Text::new("ЧСС:").prompt().unwrap().parse().unwrap();
 
-    let left_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
-    let left_atrium4_prep: Vec<&str> = left_atrium4_ask.split_whitespace().collect();
-    let left_atrium4: String = format!("{}×{}", left_atrium4_prep[0], left_atrium4_prep[1]);
-
-    let left_atrium_volume: i32 = Text::new("ЛП V:").prompt().unwrap().parse().unwrap();
-
-    let right_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
-    let right_atrium4_prep: Vec<&str> = right_atrium4_ask.split_whitespace().collect();
-    let right_atrium4: String = format!("{}×{}", right_atrium4_prep[0], right_atrium4_prep[1]);
-
-    let right_atrium_s: i32 = Text::new("ПП S:").prompt().unwrap().parse().unwrap();
-    let right_atrium_volume: i32 = Text::new("ПП V:").prompt().unwrap().parse().unwrap();
-
-    let right_ventricle: f64 = Text::new("ПЗР ПЖ:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
-
-    let right_ventricle_baz: f64 = Text::new("ПЖ баз:")
-        .prompt()
-        .unwrap()
-        .replace(",", ".")
-        .parse()
-        .unwrap();
-
-    // let ight_ventricle_medium = Text::new("ПЖ ср:")
+    // let aortic_sinus_diameter: f64 = Text::new("Ао:")
     //     .prompt()
+    //     .unwrap()
+    //     .replace(",", ".")
+    //     .parse()
+    //     .unwrap();
+    // let ascending_aorta_diameter: f64 = Text::new("ВА:")
+    //     .prompt()
+    //     .unwrap()
+    //     .replace(",", ".")
+    //     .parse()
+    //     .unwrap();
+    // let left_atrium: f64 = Text::new("ЛП:")
+    //     .prompt()
+    //     .unwrap()
+    //     .replace(",", ".")
+    //     .parse()
     //     .unwrap();
 
-    // пока не надо начало
-    let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
-        .prompt()
-        .unwrap()
-        .replace(',', ".")
-        .parse()
-        .unwrap();
+    // let left_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
+    // let left_atrium4_prep: Vec<&str> = left_atrium4_ask.split_whitespace().collect();
+    // let left_atrium4: String = format!("{}×{}", left_atrium4_prep[0], left_atrium4_prep[1]);
 
-    let simpson_end_diastolic_volume: i32 = Text::new("КДО (по Симпсону):")
-        .prompt()
-        .unwrap()
-        .parse()
-        .unwrap();
-    let simpson_end_systolic_volume: i32 = Text::new("КСО (по Симпсону):")
-        .prompt()
-        .unwrap()
-        .parse()
-        .unwrap();
-    // пока не надо конец
+    // let left_atrium_volume: i32 = Text::new("ЛП V:").prompt().unwrap().parse().unwrap();
 
-    //расчёты начало
-    let body_surface_area: f64 =
-        f64::powf(height as f64, 0.725) * f64::powf(weight as f64, 0.425) * 0.007;
+    // let right_atrium4_ask: String = Text::new("ЛП4:").prompt().unwrap();
+    // let right_atrium4_prep: Vec<&str> = right_atrium4_ask.split_whitespace().collect();
+    // let right_atrium4: String = format!("{}×{}", right_atrium4_prep[0], right_atrium4_prep[1]);
 
-    let left_atrium_index: f64 = left_atrium_volume as f64 / body_surface_area;
+    // let right_atrium_s: i32 = Text::new("ПП S:").prompt().unwrap().parse().unwrap();
+    // let right_atrium_volume: i32 = Text::new("ПП V:").prompt().unwrap().parse().unwrap();
 
-    let age = calc_age(birthday);
-    //расчёты конец
+    // let right_ventricle: f64 = Text::new("ПЗР ПЖ:")
+    //     .prompt()
+    //     .unwrap()
+    //     .replace(",", ".")
+    //     .parse()
+    //     .unwrap();
 
-    let out_filename: String = format!("{} {}.docx", &name, Local::now().format("%y%m%d"));
+    // let right_ventricle_baz: f64 = Text::new("ПЖ баз:")
+    //     .prompt()
+    //     .unwrap()
+    //     .replace(",", ".")
+    //     .parse()
+    //     .unwrap();
 
-    let ready_data = EchoReport {
-        name,
+    // // let ight_ventricle_medium = Text::new("ПЖ ср:")
+    // //     .prompt()
+    // //     .unwrap();
 
-        birthday,
+    // // пока не надо начало
+    // let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
+    //     .prompt()
+    //     .unwrap()
+    //     .replace(',', ".")
+    //     .parse()
+    //     .unwrap();
 
-        department,
-        cardnum,
+    // let simpson_end_diastolic_volume: i32 = Text::new("КДО (по Симпсону):")
+    //     .prompt()
+    //     .unwrap()
+    //     .parse()
+    //     .unwrap();
+    // let simpson_end_systolic_volume: i32 = Text::new("КСО (по Симпсону):")
+    //     .prompt()
+    //     .unwrap()
+    //     .parse()
+    //     .unwrap();
+    // // пока не надо конец
 
-        age: calc_age(birthday),
+    // //расчёты начало
+    // let body_surface_area: f64 =
+    //     f64::powf(height as f64, 0.725) * f64::powf(weight as f64, 0.425) * 0.007;
 
-        height,
-        weight,
-        pulse,
+    // let left_atrium_index: f64 = left_atrium_volume as f64 / body_surface_area;
 
-        aortic_sinus_diameter,
-        ascending_aorta_diameter,
+    // let age = calc_age(birthday);
+    // //расчёты конец
 
-        left_atrium,
-        left_atrium4,
-        left_atrium_volume,
-        left_atrium_index,
+    // let out_filename: String = format!("{} {}.docx", &name, Local::now().format("%y%m%d"));
 
-        right_atrium4,
-        right_atrium_s,
-        right_atrium_volume,
+    // let ready_data = EchoReport {
+    //     name,
 
-        right_ventricle,
-        right_ventricle_baz,
-        body_surface_area,
+    //     birthday,
 
-        left_ventricle_diastolic_size,
+    //     department,
+    //     cardnum,
 
-        left_ventricle_systolic_size: 3.4,
-        septum_thickness: 0.9,
-        posterior_wall_thickness: 1.0,
+    //     age: calc_age(birthday),
 
-        left_ventricle_mass: 180,
-        left_ventricle_mass_index: 92,
+    //     height,
+    //     weight,
+    //     pulse,
 
-        relative_wall_thickness: 0.38,
+    //     aortic_sinus_diameter,
+    //     ascending_aorta_diameter,
 
-        stroke_volume: 75,
+    //     left_atrium,
+    //     left_atrium4,
+    //     left_atrium_volume,
+    //     left_atrium_index,
 
-        cardiac_index: 2.7,
-        cardiac_output: 5.4,
+    //     right_atrium4,
+    //     right_atrium_s,
+    //     right_atrium_volume,
 
-        simpson_end_diastolic_volume,
-        simpson_end_systolic_volume,
-        ejection_fraction: 62,
+    //     right_ventricle,
+    //     right_ventricle_baz,
+    //     body_surface_area,
 
-        right_ventricle_medium: Some("fo".to_string()),
-    };
-    let template_bytes = fs::read("./assets/tplt.docx").unwrap();
+    //     left_ventricle_diastolic_size,
 
-    let data: Value = serde_json::to_value(&ready_data).unwrap();
+    //     left_ventricle_systolic_size: 3.4,
+    //     septum_thickness: 0.9,
+    //     posterior_wall_thickness: 1.0,
 
-    let rendered_bytes = docx_handlebars::render_template(template_bytes, &data).unwrap();
+    //     left_ventricle_mass: 180,
+    //     left_ventricle_mass_index: 92,
 
-    fs::create_dir(&path).unwrap_or_else(|_| {});
-    path.push(out_filename);
-    fs::write(path, rendered_bytes).unwrap();
+    //     relative_wall_thickness: 0.38,
+
+    //     stroke_volume: 75,
+
+    //     cardiac_index: 2.7,
+    //     cardiac_output: 5.4,
+
+    //     simpson_end_diastolic_volume,
+    //     simpson_end_systolic_volume,
+    //     ejection_fraction: 62,
+
+    //     right_ventricle_medium: Some("fo".to_string()),
+    // };
+    // let template_bytes = fs::read("./assets/tplt.docx").unwrap();
+
+    // let data: Value = serde_json::to_value(&ready_data).unwrap();
+
+    // let rendered_bytes = docx_handlebars::render_template(template_bytes, &data).unwrap();
+
+    // fs::create_dir(&path).unwrap_or_else(|_| {});
+    // path.push(out_filename);
+    // fs::write(path, rendered_bytes).unwrap();
 }
 
 fn safe_get_number(msg: &str, precision: u8) -> f64 {
-// precision - кол-во знаков после запятой
+    // precision - кол-во знаков после запятой
     loop {
         let input = match Text::new(msg).prompt() {
             Ok(i) => i,
             Err(InquireError::OperationCanceled) => {
-                eprintln!("Interrupted (Ctrl+D)");
-                std::process::exit(0);
+                eprintln!("Input cancelled (Ctrl+D)");
+                continue;
             }
             Err(InquireError::OperationInterrupted) => {
                 eprintln!("Interrupted (Ctrl+C)");
@@ -293,6 +294,11 @@ fn safe_get_number(msg: &str, precision: u8) -> f64 {
             }
         };
 
+        // if input.chars().count() as u8 <= precision {
+        //     eprintln!("Incorrect lenghth");
+        //     continue;
+        // }
+
         let num: i32 = match input.parse() {
             Ok(v) => v,
             Err(e) => {
@@ -301,9 +307,37 @@ fn safe_get_number(msg: &str, precision: u8) -> f64 {
             }
         };
 
-
-
-        return num as f64 / 10.0;
+        return num as f64 / f64::powi(10.0, precision.into());
     }
 }
 
+fn prep_num_for_insertion(value: f64, precision: u8) -> String {
+    return format!("{:.*}", precision as usize, value).replace(".", ",");
+}
+
+fn safe_get_string(msg: &str, can_be_empty: bool) -> String {
+    loop {
+        let input = match Text::new(msg).prompt() {
+            Ok(i) => i,
+            Err(InquireError::OperationCanceled) => {
+                eprintln!("Input cancelled (Ctrl+D)");
+                continue;
+            }
+            Err(InquireError::OperationInterrupted) => {
+                eprintln!("Interrupted (Ctrl+C)");
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("Input error occured: {}", e);
+                continue;
+            }
+        };
+
+        if !must_be_empty && input.as_str() == "" {
+            eprintln!("PleaseThis input should not be empty.");
+            continue;
+        }
+
+        return input;
+    }
+}
