@@ -1,43 +1,9 @@
 use chrono::{Datelike, Local, NaiveDate};
-use inquire::{Select, Text};
-use serde::{Serialize, Serializer};
+use inquire::{InquireError, Select, Text};
+use rfd::FileDialog;
+use serde::Serialize;
 use serde_json::Value;
 use std::{fs, path::PathBuf};
-use rfd::FileDialog;
-
-pub fn fmt1<S>(v: &f64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let txt = format!("{:.1}", v).replace('.', ",");
-    s.serialize_str(&txt)
-}
-
-pub fn fmt2<S>(v: &f64, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let txt = format!("{:.2}", v).replace('.', ",");
-    s.serialize_str(&txt)
-}
-
-pub fn fmt_date<S>(d: &NaiveDate, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    s.serialize_str(&d.format("%d.%m.%Y").to_string())
-}
-
-pub fn fmt_option_rvm<S>(val: Option<String>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let txt = match val {
-        Some(v) => format!(", средний  {} см (N< 3,5 см).", v),
-        None => "".to_string(),
-    };
-    s.serialize_str(&txt)
-}
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum Department {
@@ -63,78 +29,63 @@ impl std::fmt::Display for Department {
 pub struct EchoReport {
     pub name: String,
 
-    #[serde(serialize_with = "fmt_date")]
-    pub birthday: NaiveDate,
+    pub birthday: String,
 
     pub department: Department,
 
     pub cardnum: String,
 
-    pub age: i32,
+    pub age: String,
 
-    pub height: i32,
-    pub weight: i32,
-    pub pulse: i32,
+    pub height: String,
+    pub weight: String,
+    pub pulse: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub aortic_sinus_diameter: f64,
+    pub aortic_sinus_diameter: String,
 
-    #[serde(serialize_with = "fmt2")]
-    pub body_surface_area: f64,
+    pub body_surface_area: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub left_ventricle_diastolic_size: f64,
+    pub left_ventricle_diastolic_size: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub left_ventricle_systolic_size: f64,
+    pub left_ventricle_systolic_size: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub septum_thickness: f64,
+    pub septum_thickness: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub posterior_wall_thickness: f64,
+    pub posterior_wall_thickness: String,
 
-    pub left_ventricle_mass: i32,
-    pub left_ventricle_mass_index: i32,
+    pub left_ventricle_mass: String,
+    pub left_ventricle_mass_index: String,
 
-    #[serde(serialize_with = "fmt2")]
-    pub relative_wall_thickness: f64,
+    pub relative_wall_thickness: String,
 
-    pub stroke_volume: i32,
+    pub stroke_volume: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub cardiac_index: f64,
+    pub cardiac_index: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub cardiac_output: f64,
+    pub cardiac_output: String,
 
-    pub simpson_end_diastolic_volume: i32,
-    pub simpson_end_systolic_volume: i32,
-    pub ejection_fraction: i32,
+    pub simpson_end_diastolic_volume: String,
+    pub simpson_end_systolic_volume: String,
+    pub ejection_fraction: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub ascending_aorta_diameter: f64,
+    pub ascending_aorta_diameter: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub left_atrium: f64,
+    pub left_atrium: String,
 
     pub left_atrium4: String,
-    pub left_atrium_volume: i32,
+    pub left_atrium_volume: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub left_atrium_index: f64,
+    pub left_atrium_index: String,
 
-    pub right_atrium_s: i32,
+    pub right_atrium_s: String,
     pub right_atrium4: String,
-    pub right_atrium_volume: i32,
+    pub right_atrium_volume: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub right_ventricle: f64,
+    pub right_ventricle: String,
 
-    #[serde(serialize_with = "fmt1")]
-    pub right_ventricle_baz: f64,
+    pub right_ventricle_baz: String,
 
-    pub ight_ventricle_medium_full: Option<String>,
+    pub right_ventricle_medium: String,
 }
 
 fn calc_age(birthday: NaiveDate) -> i32 {
@@ -153,11 +104,8 @@ fn main() {
 
     let mut path = match folder {
         Some(p) => p,
-        None => PathBuf::from("./output/")
+        None => PathBuf::from("./output/"),
     };
-
-
-
 
     let name = Text::new("ФИО:").prompt().unwrap();
 
@@ -232,8 +180,6 @@ fn main() {
     //     .prompt()
     //     .unwrap();
 
-        let ight_ventricle_medium_full = Some("zzzzz".to_string());
-
     // пока не надо начало
     let left_ventricle_diastolic_size: f64 = Text::new("КДР:")
         .prompt()
@@ -259,6 +205,8 @@ fn main() {
         f64::powf(height as f64, 0.725) * f64::powf(weight as f64, 0.425) * 0.007;
 
     let left_atrium_index: f64 = left_atrium_volume as f64 / body_surface_area;
+
+    let age = calc_age(birthday);
     //расчёты конец
 
     let out_filename: String = format!("{} {}.docx", &name, Local::now().format("%y%m%d"));
@@ -313,7 +261,7 @@ fn main() {
         simpson_end_systolic_volume,
         ejection_fraction: 62,
 
-        ight_ventricle_medium_full,
+        right_ventricle_medium: Some("fo".to_string()),
     };
     let template_bytes = fs::read("./assets/tplt.docx").unwrap();
 
@@ -325,3 +273,34 @@ fn main() {
     path.push(out_filename);
     fs::write(path, rendered_bytes).unwrap();
 }
+
+fn safe_get_number(msg: &str, precision: u8) -> f64 {
+    loop {
+        let input = match Text::new(msg).prompt() {
+            Ok(i) => i,
+            Err(InquireError::OperationCanceled) => {
+                eprintln!("Interrupted (Ctrl+D)");
+                std::process::exit(0);
+            }
+            Err(InquireError::OperationInterrupted) => {
+                eprintln!("Interrupted (Ctrl+C)");
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("Input error occured: {}", e);
+                continue;
+            }
+        };
+
+        let num: i32 = match input.parse() {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Parsing error occured: {}", e);
+                continue;
+            }
+        };
+
+        return num as f64 / 10.0;
+    }
+}
+
