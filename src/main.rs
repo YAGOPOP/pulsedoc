@@ -275,6 +275,7 @@ fn main() {
 }
 
 fn safe_get_number(msg: &str, precision: u8) -> f64 {
+// precision - кол-во знаков после запятой
     loop {
         let input = match Text::new(msg).prompt() {
             Ok(i) => i,
@@ -299,6 +300,8 @@ fn safe_get_number(msg: &str, precision: u8) -> f64 {
                 continue;
             }
         };
+
+
 
         return num as f64 / 10.0;
     }
