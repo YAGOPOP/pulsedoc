@@ -2,9 +2,8 @@ use chrono::{Datelike, Local, NaiveDate};
 use inquire::{Select, Text};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use std::fs;
-
-pub const OUTDIR: &str = "./output/";
+use std::{fs, path::PathBuf};
+use rfd::FileDialog;
 
 pub fn fmt1<S>(v: &f64, s: S) -> Result<S::Ok, S::Error>
 where
@@ -148,6 +147,18 @@ fn calc_age(birthday: NaiveDate) -> i32 {
 }
 
 fn main() {
+    let folder = FileDialog::new()
+        .set_title("Выберите каталог для сохранения")
+        .pick_folder();
+
+    let mut path = match folder {
+        Some(p) => p,
+        None => PathBuf::from("./output/")
+    };
+
+
+
+
     let name = Text::new("ФИО:").prompt().unwrap();
 
     let birthday = Text::new("Дата рождения (ДДММГГГГ):").prompt().unwrap();
@@ -310,7 +321,7 @@ fn main() {
 
     let rendered_bytes = docx_handlebars::render_template(template_bytes, &data).unwrap();
 
-    fs::create_dir("./output").unwrap_or_else(|_| {});
-    let out_path = format!("{} {}", OUTDIR, out_filename);
-    fs::write(out_path, rendered_bytes).unwrap();
+    fs::create_dir(&path).unwrap_or_else(|_| {});
+    path.push(out_filename);
+    fs::write(path, rendered_bytes).unwrap();
 }
