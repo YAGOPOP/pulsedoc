@@ -167,24 +167,10 @@ fn main() {
     }
 
     let presh_time: Option<f64> = safe_get_num_opt("PHT (или нажмите Ввод чтобы пропустить):", 0);
-    let mut vena_contracta: Option<f64> = None;
-    match presh_time {
-        Some(_) => {
-            vena_contracta = Some(safe_get_num("VC АР (*10^(-1)):", 1));
-        }
-        None => {}
-    }
-
-    let mut max_velocity_vt: Option<f64> = None;
-    let mut max_grad_vt: Option<f64> = None;
-    match septum_thickness_baz {
-        Some(_) => {
-            max_velocity_vt = Some(safe_get_num("ВТЛЖ Макс скорость (*10^(-1)):", 1));
-            max_grad_vt = Some(safe_get_num("ВТЛЖ макс градиент:", 0))
-        }
-        None => {}
-    }
-
+    let vena_contracta: Option<f64> = simple_num_depends_of(presh_time, "VC АР (*10^(-1)):", 1);
+    let max_velocity_vt =
+        simple_num_depends_of(septum_thickness_baz, "ВТЛЖ Макс скорость (*10^(-1)):", 1);
+    let max_grad_vt = simple_num_depends_of(septum_thickness_baz, "ВТЛЖ макс градиент:", 0);
     let shutters_mitral: String = format!("{}. ", get_selected("МК:", klapan));
     let peak_e: f64 = safe_get_num("МК: Е:", 0);
     let peak_a: f64 = safe_get_num("А:", 0);
@@ -196,15 +182,10 @@ fn main() {
         1,
     );
 
-    let mut max_grad_mitral_valve: Option<f64> = None;
-    let mut mid_grad_mitral_valve: Option<f64> = None;
-    match max_velocity_mitral_valve {
-        Some(_) => {
-            max_grad_mitral_valve = Some(safe_get_num("МК Макс градиент:", 0));
-            mid_grad_mitral_valve = Some(safe_get_num("МК Средний градиент:", 0));
-        }
-        None => {}
-    }
+    let max_grad_mitral_valve: Option<f64> =
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Макс градиент:", 0);
+    let mid_grad_mitral_valve: Option<f64> =
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Средний градиент:", 0);
 
     let yes_no = vec!["Нет", "Да"];
     let mut calts_back_sash = "Кальцинат в основании задней створки:".to_owned();
