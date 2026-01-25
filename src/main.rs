@@ -93,9 +93,9 @@ fn main() {
     let today: DateTime<Local> = Local::now();
 
     let klapan = vec![
-        " без особенностей ",
-        " уплотнены ",
-        " уплотнены, с включением мелких кальцинатов ",
+        " без особенностей",
+        " уплотнены",
+        " уплотнены, с включением мелких кальцинатов",
         " уплотнены, кальцинированы",
     ];
 
@@ -104,16 +104,16 @@ fn main() {
     let name: String = safe_get_string("ФИО:");
     let birthday: NaiveDate = safe_get_date("Дата рождения (ДДММГГГГ):");
 
-    let department = get_selected("Отделение:", vec!["ДиОТ", "ЦАОП", "КДО"]);
+    let department = get_selected("Отделение:", vec!["КДО", "ДиОТ", "пульм", "ревм", "КХО"]);
 
     let cardnum: String = match &department as &str {
-        "ДиОТ" => {
-            let ibnum: f64 = safe_get_num("ИБ№:", 0);
-            format!("ИБ№: {}-{}-C", ibnum, today.format("%y"))
-        }
-        _ => {
+        "КДО" => {
             let aknum: f64 = safe_get_num("АК№:", 0);
             format!("АК№: {}-{}-А", aknum, today.format("%Y"))
+        }
+        _ => {
+            let ibnum: f64 = safe_get_num("ИБ№:", 0);
+            format!("ИБ№: {}-{}-C", ibnum, today.format("%y"))
         }
     };
 
@@ -148,7 +148,7 @@ fn main() {
     let simpson_end_diastolic_volume: f64 = safe_get_num("КДО (по Симпсону):", 0);
     let simpson_end_systolic_volume: f64 = safe_get_num("КСО (по Симпсону):", 0);
     let stroke_volume: Option<f64> = safe_get_num_opt("УО (или нажмите Ввод чтобы пропустить)", 0);
-    let shutters_aortal: String = get_selected("АК:", klapan.clone());
+    let shutters_aortal: String = format!("{}.", get_selected("АК:", klapan.clone()));
 
     let opening_amplitude: f64 = safe_get_num("Амплитуда раскрытия (*10^(-1)):", 1);
     let max_velocity: f64 = safe_get_num("Макс скорость (*10^(-1)):", 1);
@@ -183,21 +183,24 @@ fn main() {
     );
 
     let max_grad_mitral_valve: Option<f64> =
-        simple_num_depends_of(max_velocity_mitral_valve, "МК Макс градиент:", 0);
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Макс градиент:", 1);
     let mid_grad_mitral_valve: Option<f64> =
-        simple_num_depends_of(max_velocity_mitral_valve, "МК Средний градиент:", 0);
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Средний градиент:", 1);
 
     let yes_no = vec!["Нет", "Да"];
     let mut calts_back_sash = "Кальцинат в основании задней створки:".to_owned();
     match &get_selected(&calts_back_sash, yes_no.clone()) as &str {
-        "Да" => {}
+        "Да" => calts_back_sash = "Кальцинат в основании задней створки. ".to_owned(),
         _ => calts_back_sash = String::new(),
     }
 
     let mut posterior_leaflet_base_calcification =
         "Кальциноз основания задней створки, фиброзного кольца".to_owned();
     match &get_selected(&posterior_leaflet_base_calcification, yes_no.clone()) as &str {
-        "Да" => {}
+        "Да" => {
+            posterior_leaflet_base_calcification =
+                format!("{}. ", posterior_leaflet_base_calcification)
+        }
         _ => posterior_leaflet_base_calcification = String::new(),
     }
 
@@ -281,7 +284,7 @@ fn main() {
     let pulmonary_artery_systolic_pressure: f64 =
         max_grad_tricuspidal_regurgitation + right_atrium_pressure;
 
-    let pulmonary_artery_med_pressure: Option<f64> = match pulmonary_regurgitation_max_velocity {
+    let pulmonary_artery_med_pressure: Option<f64> = match pulmonary_regurgitation_max_grad {
         Some(v) => Some(v + right_atrium_pressure),
         None => None,
     };
@@ -357,7 +360,7 @@ fn main() {
             " см² (по допплеру) и ",
             1,
         ),
-        s_planim_full: prep_num_opt(s_planim, "", "см2 (планиметрически)", 1),
+        s_planim_full: prep_num_opt(s_planim, "", " см² (планиметрически)", 1),
         presh_time_full: prep_num_opt(presh_time, "PHT АР ", " мс, VC АР ", 0),
         vena_contracta_full: prep_num_opt(vena_contracta, "", " см.", 1),
 
@@ -386,18 +389,18 @@ fn main() {
             max_grad_mitral_valve,
             "",
             " мм рт. ст. (N<7 мм рт. ст.), Gr ср ",
-            0,
+            1,
         ),
         mid_grad_mitral_valve_full: prep_num_opt(
             mid_grad_mitral_valve,
             "",
             " мм рт.ст. (N<5 мм рт.ст).",
-            0,
+            1,
         ),
 
         tapse_full: prep_num_opt(tapse, ". TAPSE: ", " см (N>=1,7 см)", 1),
         age: prep_num(age),
-        body_surface_area: prep_num_precise(body_surface_area, 1),
+        body_surface_area: prep_num_precise(body_surface_area, 2),
         left_atrium_index: prep_num_precise(left_atrium_index, 1),
         today: today.format("%d.%m.%Y").to_string(),
 
@@ -421,14 +424,14 @@ fn main() {
         max_grad_in_pulmonary_artery: prep_num(max_grad_in_pulmonary_artery),
         max_velocity_in_pulmonary_artery: prep_num_precise(max_velocity_in_pulmonary_artery, 1),
         pulmonary_regurgitation_max_velocity_full: prep_num_opt(
-            pulmonary_regurgitation_max_grad,
-            " ЛР ",
-            " м/с, Мах GR ЛР",
-            0,
+            pulmonary_regurgitation_max_velocity,
+            "V max.ЛР ",
+            " м/с ",
+            1,
         ),
         pulmonary_regurgitation_max_grad_full: prep_num_opt(
             pulmonary_regurgitation_max_grad,
-            "",
+            "Макс.град. ЛР ",
             " мм рт.ст.",
             0,
         ),
@@ -436,7 +439,7 @@ fn main() {
         pulmonary_artery_med_pressure_full: prep_num_opt(
             pulmonary_artery_med_pressure,
             ", Ср.ДЛА ",
-            " мм рт.ст. (до 35 мм рт.ст.).",
+            " мм рт.ст. (до 20 мм рт.ст.).",
             0,
         ),
 
