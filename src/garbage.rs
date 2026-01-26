@@ -403,8 +403,8 @@ pub struct StrokeVolume {
 pub fn prep_volume(volume: StrokeVolume, precision: u8) -> String {
     let r = format!("{:.*}", precision as usize, volume.value).replace('.', ",");
     if volume.auto {
-        r
+        r + " мл"
     } else {
-        r + "(по допплеру)"
+        r + " мл (по допплеру)"
     }
 }
