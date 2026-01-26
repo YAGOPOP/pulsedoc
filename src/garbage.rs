@@ -4,7 +4,7 @@ use rfd::FileDialog;
 use serde::{Deserialize, Serialize};
 use std::{
     env::current_exe,
-    fmt,
+    // fmt,
     path::{Path, PathBuf},
 };
 use std::{fs, process};
@@ -386,7 +386,6 @@ pub fn simple_num_depends_of(condition: Option<f64>, msg: &str, precision: u8) -
 //         }
 //     }
 // }
-
 
 pub fn simple_num_depends_of_opt(condition: Option<f64>, msg: &str, precision: u8) -> Option<f64> {
     match condition {

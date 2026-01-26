@@ -2,13 +2,13 @@ use chrono::{DateTime, Local, NaiveDate};
 use serde_json::Value;
 mod garbage;
 use garbage::{
-    EchoReport, calc_age, get_selected, load_settings, prep_num, prep_num_opt, prep_num_precise,
-    safe_get_date, safe_get_num, safe_get_num_opt, safe_get_num_x_num, safe_get_string,
-    simple_num_depends_of, simple_num_depends_of_opt, StrokeVolume, prep_volume,
+    EchoReport, StrokeVolume, calc_age, get_selected, load_settings, prep_num, prep_num_opt,
+    prep_num_precise, prep_volume, safe_get_date, safe_get_num, safe_get_num_opt,
+    safe_get_num_x_num, safe_get_string, simple_num_depends_of, simple_num_depends_of_opt,
 };
 use std::fs;
 
-fn main()  -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let today: DateTime<Local> = Local::now();
 
     let klapan = vec![
@@ -87,8 +87,11 @@ fn main()  -> Result<(), Box<dyn std::error::Error>> {
 
     let presh_time: Option<f64> = safe_get_num_opt("PHT (или нажмите Ввод чтобы пропустить):", 0);
     let vena_contracta: Option<f64> = simple_num_depends_of(presh_time, "VC АР (*10^(-1)):", 1);
-    let max_velocity_vt =
-        simple_num_depends_of_opt(septum_thickness_baz, "ВТЛЖ Макс скорость (*10^(-1) или нажмите Ввод чтобы пропустить):", 1);
+    let max_velocity_vt = simple_num_depends_of_opt(
+        septum_thickness_baz,
+        "ВТЛЖ Макс скорость (*10^(-1) или нажмите Ввод чтобы пропустить):",
+        1,
+    );
 
     let max_grad_vt = simple_num_depends_of(septum_thickness_baz, "ВТЛЖ макс градиент:", 0);
     let shutters_mitral: String = format!("{}. ", get_selected("МК:", klapan));
@@ -201,7 +204,7 @@ fn main()  -> Result<(), Box<dyn std::error::Error>> {
         },
         Some(v) => StrokeVolume {
             value: v,
-            auto: false
+            auto: false,
         },
     };
 
