@@ -1,95 +1,14 @@
-use chrono::{DateTime, Datelike, Local, NaiveDate};
-use inquire::{InquireError, Select, Text};
-use rfd::FileDialog;
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Local, NaiveDate};
 use serde_json::Value;
-use std::{
-    env::current_exe,
-    fs,
-    path::{Path, PathBuf},
-    process::exit,
+mod garbage;
+use garbage::{
+    EchoReport, calc_age, get_selected, load_settings, prep_num, prep_num_opt, prep_num_precise,
+    safe_get_date, safe_get_num, safe_get_num_opt, safe_get_num_x_num, safe_get_string,
+    simple_num_depends_of, simple_num_depends_of_opt, StrokeVolume, prep_volume,
 };
+use std::fs;
 
-#[derive(Debug, Serialize)]
-pub struct EchoReport {
-    pub name: String,
-    pub birthday: String,
-    pub department: String,
-    pub cardnum: String,
-    pub age: String,
-    pub height: String,
-    pub weight: String,
-    pub pulse: String,
-    pub aortic_sinus_diameter: String,
-    pub body_surface_area: String,
-    pub left_ventricle_diastolic_size: String,
-    pub left_ventricle_systolic_size: String,
-    pub septum_thickness: String,
-    pub posterior_wall_thickness: String,
-    pub left_ventricle_mass: String,
-    pub left_ventricle_mass_index: String,
-    pub relative_wall_thickness: String,
-    pub stroke_volume: String,
-    pub cardiac_index: String,
-    pub cardiac_output: String,
-    pub simpson_end_diastolic_volume: String,
-    pub simpson_end_systolic_volume: String,
-    pub ejection_fraction: String,
-    pub ascending_aorta_diameter: String,
-    pub left_atrium: String,
-    pub left_atrium4: String,
-    pub left_atrium_volume: String,
-    pub left_atrium_index: String,
-    pub right_atrium_s: String,
-    pub right_atrium4: String,
-    pub right_atrium_volume: String,
-    pub right_ventricle: String,
-    pub right_ventricle_baz: String,
-    pub right_ventricle_medium_full: String,
-    pub right_ventricle_wall_thickness_full: String,
-    pub tapse_full: String,
-    pub septum_thickness_baz_full: String,
-    pub shutters_aortal: String,
-    pub opening_amplitude: String,
-    pub max_velocity: String,
-    pub max_grad: String,
-    pub mid_grad_full: String,
-    pub s_doppler_full: String,
-    pub s_planim_full: String,
-    pub presh_time_full: String,
-    pub vena_contracta_full: String,
-    pub max_velocity_vt_full: String,
-    pub max_grad_vt_full: String,
-    pub shutters_mitral: String,
-    pub peak_e: String,
-    pub peak_a: String,
-    pub peak_e_div_peak_a: String,
-    pub tdi_vel: String,
-    pub e_sept: String,
-    pub e_lat: String,
-    pub e_div_e_aps: String,
-    pub max_velocity_mitral_valve_full: String,
-    pub max_grad_mitral_valve_full: String,
-    pub mid_grad_mitral_valve_full: String,
-    pub calts_back_sash: String,
-    pub posterior_leaflet_base_calcification: String,
-    pub max_velocity_tricuspidal_regurgitation: String,
-    pub pulmonary_artery: String,
-    pub pulmonary_artery_systolic_pressure: String,
-    pub max_grad_tricuspidal_regurgitation: String,
-    pub pulmonary_artery_right_branch_full: String,
-    pub pulmonary_artery_left_branch_full: String,
-    pub max_velocity_in_pulmonary_artery: String,
-    pub max_grad_in_pulmonary_artery: String,
-    pub pulmonary_regurgitation_max_velocity_full: String,
-    pub pulmonary_regurgitation_max_grad_full: String,
-    pub pulmonary_artery_med_pressure_full: String,
-    pub vena: String,
-    pub effusion: String,
-    pub today: String,
-}
-
-fn main() {
+fn main()  -> Result<(), Box<dyn std::error::Error>> {
     let today: DateTime<Local> = Local::now();
 
     let klapan = vec![
@@ -169,23 +88,10 @@ fn main() {
     let presh_time: Option<f64> = safe_get_num_opt("PHT (или нажмите Ввод чтобы пропустить):", 0);
     let vena_contracta: Option<f64> = simple_num_depends_of(presh_time, "VC АР (*10^(-1)):", 1);
     let max_velocity_vt =
-        simple_num_depends_of(septum_thickness_baz, "ВТЛЖ Макс скорость (*10^(-1)):", 1);
+        simple_num_depends_of_opt(septum_thickness_baz, "ВТЛЖ Макс скорость (*10^(-1) или нажмите Ввод чтобы пропустить):", 1);
+
     let max_grad_vt = simple_num_depends_of(septum_thickness_baz, "ВТЛЖ макс градиент:", 0);
     let shutters_mitral: String = format!("{}. ", get_selected("МК:", klapan));
-    let peak_e: f64 = safe_get_num("МК: Е:", 0);
-    let peak_a: f64 = safe_get_num("А:", 0);
-    let tdi_vel: String = get_selected("TDI:", vec!["e<a", "e>a"]);
-    let e_sept: f64 = safe_get_num("E sept:", 0);
-    let e_lat: f64 = safe_get_num("E’ lat:", 0);
-    let max_velocity_mitral_valve = safe_get_num_opt(
-        "МК Макс скорость (*10^(-1) или нажмите Ввод чтобы пропустить):",
-        1,
-    );
-
-    let max_grad_mitral_valve: Option<f64> =
-        simple_num_depends_of(max_velocity_mitral_valve, "МК Макс градиент:", 1);
-    let mid_grad_mitral_valve: Option<f64> =
-        simple_num_depends_of(max_velocity_mitral_valve, "МК Средний градиент:", 1);
 
     let yes_no = vec!["Нет", "Да"];
     let mut calts_back_sash = "Кальцинат в основании задней створки:".to_owned();
@@ -204,17 +110,34 @@ fn main() {
         _ => posterior_leaflet_base_calcification = String::new(),
     }
 
+    let peak_e: f64 = safe_get_num("МК: Е:", 0);
+    let peak_a: f64 = safe_get_num("А:", 0);
+    let tdi_vel: String = get_selected("TDI:", vec!["e<a", "e>a"]);
+    let e_sept: f64 = safe_get_num("E sept:", 0);
+    let e_lat: f64 = safe_get_num("E’ lat:", 0);
+    let max_velocity_mitral_valve = safe_get_num_opt(
+        "МК Макс скорость (*10^(-1) или нажмите Ввод чтобы пропустить):",
+        1,
+    );
+
+    let max_grad_mitral_valve: Option<f64> =
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Макс градиент:", 1);
+    let mid_grad_mitral_valve: Option<f64> =
+        simple_num_depends_of(max_velocity_mitral_valve, "МК Средний градиент:", 1);
+
     let max_velocity_tricuspidal_regurgitation: f64 =
         safe_get_num("ТК Макс скорость ТР (*10^(-1)):", 1);
     let max_grad_tricuspidal_regurgitation: f64 = safe_get_num("ТК макс градиент ТР:", 0);
 
     let my_message = format!(
-        "СДЛА: к {} вместо 3 прибавить иное?",
+        "СДЛА: к {} прибавить 3?",
         max_grad_tricuspidal_regurgitation
     );
-    let right_atrium_pressure: f64 = match &get_selected(&my_message as &str, yes_no) as &str {
-        "Да" => safe_get_num("", 0),
-        _ => 3.0,
+
+    let yes_other = vec!["да", "иное"];
+    let right_atrium_pressure: f64 = match &get_selected(&my_message as &str, yes_other) as &str {
+        "да" => 3.0,
+        _ => safe_get_num("Иное:", 0),
     };
 
     let pulmonary_artery: f64 = safe_get_num("Диаметр ЛА (*10^(-1)):", 1);
@@ -231,8 +154,10 @@ fn main() {
 
     let max_velocity_in_pulmonary_artery = safe_get_num("ЛА макс скорость (*10^(-1)):", 1);
     let max_grad_in_pulmonary_artery = safe_get_num("ЛА макс градиент:", 0);
-
-    let pulmonary_regurgitation_max_velocity = safe_get_num_opt("ЛР макс. скорость (*10^(-1)):", 1);
+    let pulmonary_regurgitation_max_velocity = safe_get_num_opt(
+        "ЛР макс. скорость (*10^(-1)  или нажмите Ввод чтобы пропустить):",
+        1,
+    );
     let pulmonary_regurgitation_max_grad =
         simple_num_depends_of(pulmonary_regurgitation_max_velocity, "ЛР макс градиент:", 0);
 
@@ -268,12 +193,19 @@ fn main() {
     let relative_wall_thickness: f64 =
         2.0 * posterior_wall_thickness / left_ventricle_diastolic_size;
 
-    let stroke_volume: f64 = match stroke_volume {
-        None => simpson_end_diastolic_volume - simpson_end_systolic_volume,
-        Some(v) => v,
+    // если вручную то по допплеру
+    let stroke_volume = match stroke_volume {
+        None => StrokeVolume {
+            value: simpson_end_diastolic_volume - simpson_end_systolic_volume,
+            auto: true,
+        },
+        Some(v) => StrokeVolume {
+            value: v,
+            auto: false
+        },
     };
 
-    let cardiac_output: f64 = pulse * stroke_volume / 1000.0;
+    let cardiac_output: f64 = pulse * stroke_volume.value / 1000.0;
 
     let cardiac_index: f64 = cardiac_output / body_surface_area;
 
@@ -329,7 +261,7 @@ fn main() {
         ),
         simpson_end_diastolic_volume: prep_num(simpson_end_diastolic_volume),
         simpson_end_systolic_volume: prep_num(simpson_end_systolic_volume),
-        stroke_volume: prep_num_precise(stroke_volume, 0),
+        stroke_volume: prep_volume(stroke_volume, 0),
         weight: prep_num(weight),
         right_ventricle_medium_full: prep_num_opt(
             right_ventricle_medium,
@@ -449,291 +381,14 @@ fn main() {
 
     // // работа с файлами начало
 
-    let template_bytes = fs::read("./assets/tplt.docx").unwrap();
+    let template_bytes = fs::read("./assets/tplt.docx")?;
 
-    let data: Value = serde_json::to_value(&ready_data).unwrap();
+    let data: Value = serde_json::to_value(&ready_data)?;
 
-    let rendered_bytes = docx_handlebars::render_template(template_bytes, &data).unwrap();
+    let rendered_bytes = docx_handlebars::render_template(template_bytes, &data)?;
 
     let my_path = cur_settings.save_dir;
-    fs::write(my_path.join(out_filename), rendered_bytes).unwrap();
-}
+    fs::write(my_path.join(out_filename), rendered_bytes)?;
 
-fn get_selected(msg: &str, options: Vec<&str>) -> String {
-    return match Select::new(msg, options).prompt() {
-        Ok(v) => v.to_owned(),
-        Err(e) => {
-            eprintln!("{}", e);
-            exit(1);
-        }
-    };
-}
-
-fn safe_get_string(msg: &str) -> String {
-    loop {
-        let inp = match input(msg) {
-            Some(v) if v.is_empty() => {
-                eprintln!("Тут нельзя ничего не ввести.");
-                continue;
-            }
-            Some(v) => v,
-            None => continue,
-        };
-
-        return inp;
-    }
-}
-
-fn safe_get_date(msg: &str) -> NaiveDate {
-    loop {
-        let inp = match input(msg) {
-            Some(v) => v,
-            None => continue,
-        };
-
-        let date = match NaiveDate::parse_from_str(&inp, "%d%m%Y") {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("Error: {}", e);
-                continue;
-            }
-        };
-        return date;
-    }
-}
-
-enum ParseNumError {
-    Empty,
-    Invalid,
-}
-
-fn input(msg: &str) -> Option<String> {
-    let inp = match Text::new(msg).prompt() {
-        Ok(i) => i,
-        Err(InquireError::OperationCanceled) => {
-            eprintln!("Input cancelled (Ctrl+D)");
-            return None;
-        }
-        Err(InquireError::OperationInterrupted) => {
-            eprintln!("Interrupted (Ctrl+C)");
-            exit(0);
-        }
-        Err(e) => {
-            eprintln!("Input error occured: {}", e);
-            return None;
-        }
-    };
-    return Some(inp.trim().to_owned());
-}
-
-fn parse_num_opt(inp: String, precision: u8) -> Result<f64, ParseNumError> {
-    if inp.is_empty() {
-        return Err(ParseNumError::Empty);
-    }
-
-    let num: i64 = inp.parse().map_err(|_| ParseNumError::Invalid)?;
-    return Ok(num as f64 / 10_i32.pow(precision as u32) as f64);
-}
-
-fn safe_get_num(msg: &str, precision: u8) -> f64 {
-    loop {
-        let inp = match input(msg) {
-            Some(v) => v,
-            None => {
-                eprintln!("Это обязательное поле, его нельзя пропутить.");
-                continue;
-            }
-        };
-
-        let res: f64 = match inp.parse() {
-            Ok(v) => v,
-            Err(_) => {
-                eprintln!("Некорректный ввод.");
-                continue;
-            }
-        };
-
-        return res as f64 / 10_i32.pow(precision as u32) as f64;
-    }
-}
-
-fn safe_get_num_opt(msg: &str, precision: u8) -> Option<f64> {
-    loop {
-        let inp = match input(msg) {
-            Some(v) => v,
-            None => {
-                eprintln!("Это обязательное поле, его нельзя пропутить.");
-                continue;
-            }
-        };
-
-        let res: f64 = match parse_num_opt(inp, precision) {
-            Ok(v) => v,
-            Err(ParseNumError::Empty) => return None,
-            Err(_) => {
-                eprintln!("Некорректный ввод.");
-                continue;
-            }
-        };
-
-        return Some(res);
-    }
-}
-
-fn prep_num_opt(num: Option<f64>, left: &str, right: &str, precision: u8) -> String {
-    match num {
-        Some(v) => {
-            let middle = format!("{:.*}", precision as usize, v).replace('.', ",");
-            format!("{}{}{}", left, middle, right)
-        }
-        None => "".to_owned(),
-    }
-}
-
-fn prep_num(num: impl ToString) -> String {
-    num.to_string().replace('.', ",")
-}
-
-fn safe_get_num_x_num(msg: &str, precision: u8) -> String {
-    loop {
-        let inp = match input(msg) {
-            Some(v) => v,
-            None => {
-                eprintln!("Это обязательное поле, его нельзя пропутить.");
-                continue;
-            }
-        };
-
-        let mut inp = inp.split_whitespace();
-
-        let num1: f64 = match inp.next() {
-            Some(v) => match v.parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    eprintln!("Первое число некорректно.");
-                    continue;
-                }
-            },
-            None => {
-                eprintln!("Введите два числа через пробел.");
-                continue;
-            }
-        };
-
-        let num2: f64 = match inp.next() {
-            Some(v) => match v.parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    eprintln!("Второе число некорректно.");
-                    continue;
-                }
-            },
-            None => {
-                eprintln!("Введите два числа через пробел.");
-                continue;
-            }
-        };
-
-        if inp.next().is_some() {
-            eprintln!("Должно быть только 2 числа.");
-            continue;
-        }
-
-        return format!(
-            "{}×{}",
-            prep_num_precise(num1 as f64 / 10_i32.pow(precision as u32) as f64, precision),
-            prep_num_precise(num2 as f64 / 10_i32.pow(precision as u32) as f64, precision)
-        );
-    }
-}
-
-fn calc_age(birthday: NaiveDate, td: DateTime<Local>) -> i32 {
-    let today = td.date_naive();
-    let mut age: i32 = today.year() - birthday.year();
-    if today.ordinal() < birthday.ordinal() {
-        age -= 1;
-    }
-    age
-}
-
-fn prep_num_precise(num: f64, precision: u8) -> String {
-    format!("{:.*}", precision as usize, num).replace('.', ",")
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Settings {
-    save_dir: PathBuf,
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        let v = get_exe_dir().join("output");
-        fs::create_dir(&v).unwrap_or_else(|_| {});
-        Self { save_dir: v }
-    }
-}
-
-fn get_exe_dir() -> PathBuf {
-    match current_exe() {
-        Ok(exe) => match exe.parent() {
-            Some(dir) => dir.to_path_buf(),
-            None => {
-                eprintln!("Ошибка: некорректное расположение исполняемого файла");
-                exit(1);
-            }
-        },
-        Err(e) => {
-            eprintln!("Ошибка: путь исполняемого файла не найден. ({})", e);
-            exit(1);
-        }
-    }
-}
-
-fn load_settings() -> Settings {
-    let path = get_exe_dir().join("settings").join("settings.json");
-
-    // 1) если файл есть — пробуем прочитать и распарсить
-    if let Ok(text) = fs::read_to_string(&path) {
-        if let Ok(settings) = serde_json::from_str::<Settings>(&text) {
-            // (необязательно) можно убедиться, что каталог существует
-            let _ = fs::create_dir_all(&settings.save_dir);
-            return settings;
-        }
-        // если JSON битый/не тот — падаем ниже в выбор каталога
-    }
-    // 2) файла нет или он некорректный → спрашиваем у пользователя
-    let save_dir = choose_save_dir_or_default();
-
-    let settings = Settings { save_dir };
-
-    // 3) сохраняем обратно
-    save_settings(&path, &settings);
-
-    settings
-}
-
-fn choose_save_dir_or_default() -> PathBuf {
-    match FileDialog::new()
-        .set_title("Выберите каталог для сохранения")
-        .pick_folder()
-    {
-        Some(p) => p,
-        None => Settings::default().save_dir,
-    }
-}
-
-fn save_settings(path: &Path, settings: &Settings) {
-    if let Some(parent) = path.parent() {
-        let _ = fs::create_dir_all(parent);
-    }
-
-    let text = serde_json::to_string_pretty(settings).unwrap();
-    fs::write(path, text).unwrap();
-}
-
-fn simple_num_depends_of(condition: Option<f64>, msg: &str, precision: u8) -> Option<f64> {
-    match condition {
-        Some(_) => return Some(safe_get_num(msg, precision)),
-        None => return None,
-    }
+    return Ok(());
 }
