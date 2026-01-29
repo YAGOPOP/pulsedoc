@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         1,
     );
 
-    let max_grad_vt = simple_num_depends_of(septum_thickness_baz, "ВТЛЖ макс градиент:", 0);
+    let max_grad_vt = simple_num_depends_of(max_velocity_vt, "ВТЛЖ макс градиент:", 0);
     let shutters_mitral: String = format!("{}. ", get_selected("МК:", klapan));
 
     let yes_no = vec!["Нет", "Да"];
@@ -167,7 +167,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let vena: f64 = safe_get_num("НПВ (*10^(-1)):", 1);
 
     let vypot: Vec<&str> = vec![
-        "не выявлен",
+        "не выявлен.",
         "эхонегативное пространство по задней стенке левого желудочка до см, по боковой стенке левого желудочка до см, по боковой стенке правого желудочка см, по передней стенке правого желудочка см. по верхне-латеральному краю правого предсердия до см.",
     ];
     let effusion: String = get_selected("Перикардиальный выпот: ", vypot);
