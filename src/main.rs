@@ -1,10 +1,11 @@
 mod promptget;
 mod report;
+mod reporttypes;
 mod settings;
-use crate::{report::CalculatedReportData, settings::get_exe_dir};
 use chrono::{DateTime, Local};
-use report::RawReportData;
+use reporttypes::{CalculatedReportData, RawReportData};
 use serde_json::Value;
+use settings::get_exe_dir;
 use settings::load_settings;
 use std::fs;
 

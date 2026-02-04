@@ -250,8 +250,8 @@ pub fn get_int(msg: &str) -> i64 {
     ask_required(msg, parse_int)
 }
 
-pub fn get_int_opt(msg: &str) -> Option<i64> {
-    ask_optional(msg, parse_int)
+pub fn get_int_if(cond: bool, msg: &str) -> Option<i64> {
+    return if cond { Some(get_int(msg)) } else { None };
 }
 
 pub fn get_string(msg: &str) -> String {
